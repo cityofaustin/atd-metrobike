@@ -1,0 +1,4 @@
+arro==1.2.*
+dropbox==11.21.*
+requests==2.26.*
+sodapy==2.1.*
