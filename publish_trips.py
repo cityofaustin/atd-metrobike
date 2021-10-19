@@ -46,13 +46,13 @@ def getLogger(name, level=logging.INFO):
     return logger
 
 
-def get_newest_socata_record(resource_id):
+def get_max_socrata_date(resource_id):
     url = "https://data.austintexas.gov/resource/{}.json?$query=SELECT checkout_date as date ORDER BY checkout_date DESC LIMIT 1".format(
         resource_id
     )
     res = requests.get(url)
     res.raise_for_status()
-    return res.json()[0]["date"]
+    return arrow.get(res.json()[0]["date"])
 
 
 def get_data(path, token):
@@ -104,7 +104,7 @@ def main():
     today = arrow.get(datetime.today())
     # bcycle dropbox data is only ever available for the previous month
     max_file_date = today.shift(months=-1)
-    current_file_date = arrow.get(get_newest_socata_record(RESOURCE_ID))
+    current_file_date = get_max_socrata_date(RESOURCE_ID)
 
     if current_file_date >= max_file_date:
         return
