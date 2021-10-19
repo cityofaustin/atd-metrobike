@@ -2,7 +2,7 @@ FROM python:3.8-slim
 
 # Copy our own application
 WORKDIR /app
-COPY . /app/atd-knack-services
+COPY . /app
 
 RUN chmod -R 755 /app/*
 
