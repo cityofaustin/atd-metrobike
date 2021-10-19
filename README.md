@@ -21,9 +21,7 @@ SOCRATA_API_KEY_SECRET
 SOCRATA_APP_TOKEN
 ```
 
-3. Run the script
-
-From the same directory as your environment file, run:
+3. From the same directory as your environment file, run:
 
 ```shell
 $ docker run -it --rm --env-file env_file atddocker/atd-metrobike python publish_trips.py
