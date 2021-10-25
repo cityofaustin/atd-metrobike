@@ -24,7 +24,7 @@ FIELDS = {
     "TripId": "trip_id",
     "MembershipType": "membership_type",
     "Bike": "bicycle_id",
-    # "BikeType": "bike_type",
+    "BikeType": "bike_type",
     "CheckoutDateLocal": "checkout_date",
     "CheckoutTimeLocal": "checkout_time",
     "CheckoutKioskID": "checkout_kiosk_id",
