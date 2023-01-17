@@ -95,7 +95,7 @@ def handle_data(csv_text):
 
 def main():
     client = Socrata(
-        "data.austintexas.gov",
+        "datahub.austintexas.gov",
         SOCRATA_APP_TOKEN,
         username=SOCRATA_API_KEY_ID,
         password=SOCRATA_API_KEY_SECRET,
