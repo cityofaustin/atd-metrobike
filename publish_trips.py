@@ -9,6 +9,7 @@ import os
 import sys
 
 import arrow
+from cerberus import Validator
 import dropbox
 import requests
 from sodapy import Socrata
@@ -35,6 +36,25 @@ FIELDS = {
 }
 
 
+"""
+yes, all these types are strings. we're letting Socrata coerce trip_duration_minutes to
+a number. we could do better. the main purpose of the schema validation is to ensure
+all fields are present and not-null
+"""
+SCHEMA = {
+    "trip_id": {"type": "string"},
+    "membership_type": {"type": "string"},
+    "bicycle_id": {"type": "string"},
+    "checkout_date": {"type": "string"},
+    "checkout_time": {"type": "string"},
+    "checkout_kiosk_id": {"type": "string"},
+    "checkout_kiosk": {"type": "string"},
+    "return_kiosk_id": {"type": "string"},
+    "return_kiosk": {"type": "string"},
+    "trip_duration_minutes": {"type": "string"},
+}
+
+
 def getLogger(name, level=logging.INFO):
     """Return a module logger that streams to stdout"""
     logger = logging.getLogger(name)
@@ -47,12 +67,19 @@ def getLogger(name, level=logging.INFO):
 
 
 def get_max_socrata_date(resource_id):
-    url = "https://data.austintexas.gov/resource/{}.json?$query=SELECT checkout_date as date ORDER BY checkout_date DESC LIMIT 1".format(
-        resource_id
-    )
-    res = requests.get(url)
+    url = f"https://data.austintexas.gov/resource/{resource_id}.json"
+    params = {
+        "$query": "SELECT checkout_date as date where checkout_date is not null ORDER BY checkout_date DESC LIMIT 1"
+    }
+    res = requests.get(url, params=params)
     res.raise_for_status()
-    return arrow.get(res.json()[0]["date"])
+    try:
+        datestring = res.json()[0]["date"]
+    except (KeyError, IndexError):
+        raise ValueError(
+            "No existing data found. There may be something wrong with the dataset?"
+        )
+    return arrow.get(datestring)
 
 
 def get_data(path, token):
@@ -71,6 +98,8 @@ def get_data(path, token):
 
 
 def handle_value(key, value, date_keys=["checkout_date"]):
+    if value == "":
+        return None
     if not value or key not in date_keys:
         return value
     # Format a socrata-friendly date
@@ -93,6 +122,11 @@ def handle_data(csv_text):
     return data
 
 
+def validate_row(row, validator):
+    if not validator.validate(row):
+        raise ValueError(f"Schema validation error: {validator.errors}")
+
+
 def main():
     client = Socrata(
         "datahub.austintexas.gov",
@@ -109,6 +143,8 @@ def main():
     if current_file_date >= max_file_date:
         return
 
+    validator = Validator(SCHEMA)
+
     while True:
         current_file_date = current_file_date.shift(months=+1)
         dropbox_file_dt = current_file_date.format("MMYYYY")
@@ -122,10 +158,14 @@ def main():
         if not csv_text:
             return
 
+        logger.info(f"Transforming data...")
         data = handle_data(csv_text)
+
+        logger.info(f"Validating data...")
+        [validate_row(row, validator) for row in data]
+
         logger.info(f"Uploading {len(data)} trips...")
         client.upsert(RESOURCE_ID, data)
-
 
 if __name__ == "__main__":
     logger = getLogger(__file__)
