@@ -4,11 +4,12 @@ Metrobike staff put new trip data in Dropbox share on a monthly basis.
 """
 import csv
 from datetime import datetime
+import dateutil.parser
+from dateutil.relativedelta import relativedelta
 import logging
 import os
 import sys
 
-import arrow
 from cerberus import Validator
 import dropbox
 import requests
@@ -52,6 +53,9 @@ SCHEMA = {
     "return_kiosk_id": {"type": "string"},
     "return_kiosk": {"type": "string"},
     "trip_duration_minutes": {"type": "string"},
+    "bike_type": {"type": "string"},
+    "month": {"type": "string"},
+    "year": {"type": "string"},
 }
 
 
@@ -79,7 +83,7 @@ def get_max_socrata_date(resource_id):
         raise ValueError(
             "No existing data found. There may be something wrong with the dataset?"
         )
-    return arrow.get(datestring)
+    return dateutil.parser.parse(datestring)
 
 
 def get_data(path, token):
@@ -97,13 +101,13 @@ def get_data(path, token):
     return res.text
 
 
-def handle_value(key, value, date_keys=["checkout_date"]):
+def handle_value(key, value, date_keys=["CheckoutDateLocal"]):
     if value == "":
         return None
     if not value or key not in date_keys:
         return value
     # Format a socrata-friendly date
-    return arrow.get(value, "M/D/YY").format("YYYY-MM-DD")
+    return dateutil.parser.parse(value).strftime("%Y-%m-%d")
 
 
 def map_row(row):
@@ -113,12 +117,42 @@ def map_row(row):
         if key in FIELDS
     }
 
+def classify_bike_type(data):
+    """
+    Classifying Bikes into Electric or Classic types based on the ID pattern supplied by CapMetro.
+    All e-bikes will have 5 digit bike numbers starting with “15” and up.
+    """
+    for row in data:
+        if len(row["bicycle_id"]) == 5 and int(row["bicycle_id"][0:2]) >= 15:
+            row["bike_type"] = "Electric Bike"
+        # Additional case where the ID is a six character ID with a trailing E are also E-bikes
+        elif len(row["bicycle_id"]) == 6 and int(row["bicycle_id"][0:2]) >= 15 and row["bicycle_id"][5] == "E":
+            row["bike_type"] = "Electric Bike"
+        else:
+            row["bike_type"] = "Classic Bike"
+
+    return data
+
+def populate_month_year(data):
+    """
+    Extracts the month and year of the checkout date for two columns in the Socrata dataset
+    """
+    for row in data:
+        date = dateutil.parser.parse(row["checkout_date"])
+        row["year"] = date.strftime("%Y")
+        row["month"] = date.strftime("%-m")
+    return data
+
 
 def handle_data(csv_text):
     """Parse CSV"""
     rows = csv_text.splitlines()
     reader = csv.DictReader(rows)
     data = [map_row(row) for row in reader]
+    # Get bike type
+    data = classify_bike_type(data)
+    # Add month/year columns
+    data = populate_month_year(data)
     return data
 
 
@@ -135,9 +169,9 @@ def main():
         password=SOCRATA_API_KEY_SECRET,
         timeout=30,
     )
-    today = arrow.get(datetime.today())
+    today = datetime.today()
     # bcycle dropbox data is only ever available for the previous month
-    max_file_date = today.shift(months=-1)
+    max_file_date = today + relativedelta(months=-1)
     current_file_date = get_max_socrata_date(RESOURCE_ID)
 
     if current_file_date >= max_file_date:
@@ -146,8 +180,8 @@ def main():
     validator = Validator(SCHEMA)
 
     while True:
-        current_file_date = current_file_date.shift(months=+1)
-        dropbox_file_dt = current_file_date.format("MMYYYY")
+        current_file_date = current_file_date + relativedelta(months=+1)
+        dropbox_file_dt = current_file_date.strftime("%m%Y")
         current_file = "TripReport-{}.csv".format(dropbox_file_dt)
         root = "austinbcycletripdata"  # note the lowercase-ness
         path = "/{}/{}/{}".format(root, current_file_date.year, current_file)
