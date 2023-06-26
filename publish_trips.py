@@ -4,13 +4,13 @@ Metrobike staff put new trip data in Dropbox share on a monthly basis.
 """
 import csv
 from datetime import datetime
-import dateutil.parser
-from dateutil.relativedelta import relativedelta
 import logging
 import os
 import sys
 
 from cerberus import Validator
+import dateutil.parser
+from dateutil.relativedelta import relativedelta
 import dropbox
 import requests
 from sodapy import Socrata
