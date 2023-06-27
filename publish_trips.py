@@ -36,7 +36,6 @@ FIELDS = {
     "DurationMins": "trip_duration_minutes",
 }
 
-
 """
 yes, all these types are strings. we're letting Socrata coerce trip_duration_minutes to
 a number. we could do better. the main purpose of the schema validation is to ensure
@@ -117,21 +116,30 @@ def map_row(row):
         if key in FIELDS
     }
 
+
 def classify_bike_type(data):
     """
     Classifying Bikes into Electric or Classic types based on the ID pattern supplied by CapMetro.
     All e-bikes will have 5 digit bike numbers starting with “15” and up.
     """
     for row in data:
-        if len(row["bicycle_id"]) == 5 and int(row["bicycle_id"][0:2]) >= 15:
-            row["bike_type"] = "Electric Bike"
-        # Additional case where the ID is a six character ID with a trailing E are also E-bikes
-        elif len(row["bicycle_id"]) == 6 and int(row["bicycle_id"][0:2]) >= 15 and row["bicycle_id"][5] == "E":
-            row["bike_type"] = "Electric Bike"
-        else:
-            row["bike_type"] = "Classic Bike"
+        try:
+            if len(row["bicycle_id"]) == 5 and int(row["bicycle_id"][0:2]) >= 15:
+                row["bike_type"] = "electric"
+            # Additional case where the ID is a six character ID with a trailing E are also E-bikes
+            elif (
+                len(row["bicycle_id"]) == 6
+                and int(row["bicycle_id"][0:2]) >= 15
+                and row["bicycle_id"][5] == "E"
+            ):
+                row["bike_type"] = "electric"
+            else:
+                row["bike_type"] = "classic"
+        except:
+            row["bike_type"] = "classic"
 
     return data
+
 
 def populate_month_year(data):
     """
@@ -200,6 +208,7 @@ def main():
 
         logger.info(f"Uploading {len(data)} trips...")
         client.upsert(RESOURCE_ID, data)
+
 
 if __name__ == "__main__":
     logger = getLogger(__file__)
