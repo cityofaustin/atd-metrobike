@@ -157,11 +157,8 @@ def datetime_creation(data):
     Joins together the checkout time and date columns to a single datetime field.
     """
     for row in data:
-        # Hour is not zero padded in the data so we have to check for that
-        if len(row["checkout_time"]) == 7:
-            row["checkout_datetime"] = f"{row['checkout_date']}T0{row['checkout_time']}"
-        else:
-            row["checkout_datetime"] = f"{row['checkout_date']}T{row['checkout_time']}"
+        # Note that hour is not zero padded in the data
+        row["checkout_datetime"] = f"{row['checkout_date']}T{row['checkout_time'].zfill(8)}"
     return data
 
 
@@ -171,11 +168,11 @@ def handle_data(csv_text):
     reader = csv.DictReader(rows)
     data = [map_row(row) for row in reader]
     # Get bike type
-    data = classify_bike_type(data)
+    classify_bike_type(data)
     # Add month/year columns
-    data = populate_month_year(data)
+    populate_month_year(data)
     # Add datetime column
-    data = datetime_creation(data)
+    datetime_creation(data)
     # Remove trips that are less than 2 minutes in length
     data = [d for d in data if int(d.get("trip_duration_minutes", 0)) > 1]
     return data
