@@ -27,6 +27,10 @@ SOCRATA_APP_TOKEN
 $ docker run -it --rm --env-file env_file atddocker/atd-metrobike python publish_trips.py
 ```
 
+## Docker CI
+
+The docker image `attdocker/atd-metrobike` will be rebuilt and pushed to Docker hub on any push to a github branch. If `production` is the target branch, the image will be tagged with `:production` otherwise it will be tagged with `staging`.
+
 ## License
 
 As a work of the City of Austin, this project is in the public domain within the United States.
