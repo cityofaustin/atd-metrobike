@@ -6,6 +6,9 @@ import dropbox
 from tqdm import tqdm
 import boto3
 from datetime import datetime
+import random
+import string
+
 
 # Get the Dropbox token from environment variables
 DROPBOX_TOKEN = os.getenv("DROPBOX_TOKEN")
@@ -76,6 +79,15 @@ def mirror_files(path, pbar, s3_bucket=None, s3_folder=None):
             mirror_files(entry.path_display, pbar, s3_bucket, s3_folder)
 
 
+def delete_files(path):
+    for entry in dbx.files_list_folder(path).entries:
+        if isinstance(entry, dropbox.files.FileMetadata):
+            dbx.files_delete(entry.path_display)
+        elif isinstance(entry, dropbox.files.FolderMetadata):
+            delete_files(entry.path_display)
+            dbx.files_delete(entry.path_display)
+
+
 # Parse command-line arguments
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -93,7 +105,14 @@ parser.add_argument(
     action="store_true",
     help="mirror the contents of the Dropbox account to S3",
 )
+parser.add_argument(
+    "-d",
+    "--delete",
+    action="store_true",
+    help="delete all files in the Dropbox account after confirmation",
+)
 args = parser.parse_args()
+
 
 # Start listing files from the root
 if args.inspect:
@@ -109,3 +128,16 @@ if args.mirror:
             mirror_files("", pbar, "metrobike-historic-data", s3_folder)
         else:
             mirror_files("", pbar)
+
+if args.delete:
+    # Generate a random 4-digit number
+    random_number = random.randint(1000, 9999)
+    print(
+        f"WARNING: You are about to delete all files in your Dropbox account. To confirm, type this number: {random_number}"
+    )
+    user_input = input()
+    if user_input == str(random_number):
+        delete_files("")
+        print("All files have been deleted.")
+    else:
+        print("Confirmation number does not match. No files were deleted.")
