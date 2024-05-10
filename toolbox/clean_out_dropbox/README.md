@@ -24,33 +24,30 @@ The script has the following command-line arguments:
 - `-i` or `--inspect`: List the files in the Dropbox account along with their sizes.
 - `-m` or `--mirror`: Mirror the contents of the Dropbox account to a local directory.
 - `-s` or `--mirror-to-s3`: Mirror the contents of the Dropbox account to an AWS S3 bucket.
+- `-d` or `--delete`: Delete the contents of the Dropbox account.
 
 ### Examples
 
-List the files in the Dropbox account:
+#### List the files in the Dropbox account:
 
 ```bash
 python clean_out_dropbox.py -i
 ```
 
-Mirror the contents of the Dropbox account to a local directory:
+#### Mirror the contents of the Dropbox account to a local directory:
 
 ```bash
 ./clean_out_dropbox.py -m
 ```
 
-Mirror the contents of the Dropbox account to an AWS S3 bucket:
+#### Mirror the contents of the Dropbox account to an AWS S3 bucket:
 
 ```bash
 ./clean_out_dropbox.py -ms
 ```
 
-You can also combine the -i, -m, and -s options. For example, to list the files and then mirror them to a local directory:
+#### ⚠️ Delete the contents of the Dropbox account:
 
-Or to list the files and then mirror them to an AWS S3 bucket:
-
-p
-
-```
-
+```bash
+./clean_out_dropbox.py -d
 ```
