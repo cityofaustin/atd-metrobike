@@ -13,8 +13,6 @@ dbx = dropbox.Dropbox(DROPBOX_TOKEN)
 # Initialize total size to 0
 total_size = 0
 
-# Create the mirror directory
-
 
 # Recursive function to list files
 def list_files(path, mirror):
@@ -26,10 +24,11 @@ def list_files(path, mirror):
             total_size += size_mb
 
             if mirror:
-                os.makedirs("dropbox_mirror", exist_ok=True)
-                # Download the file
+                # Create the mirror directory
                 local_path = os.path.join("dropbox_mirror", entry.path_display[1:])
                 os.makedirs(os.path.dirname(local_path), exist_ok=True)
+
+                # Download the file
                 dbx.files_download_to_file(local_path, entry.path_display)
         elif isinstance(entry, dropbox.files.FolderMetadata):
             print(entry.path_display + "/")
