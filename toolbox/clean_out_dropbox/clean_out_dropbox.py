@@ -3,6 +3,7 @@
 import os
 import argparse
 import dropbox
+from tqdm import tqdm
 
 # Get the Dropbox token from environment variables
 DROPBOX_TOKEN = os.getenv("DROPBOX_TOKEN")
@@ -14,25 +15,45 @@ dbx = dropbox.Dropbox(DROPBOX_TOKEN)
 total_size = 0
 
 
+# Recursive function to count files
+def count_files(path):
+    count = 0
+    for entry in dbx.files_list_folder(path).entries:
+        if isinstance(entry, dropbox.files.FileMetadata):
+            count += 1
+        elif isinstance(entry, dropbox.files.FolderMetadata):
+            count += count_files(entry.path_display)
+    return count
+
+
 # Recursive function to list files
-def list_files(path, mirror):
+def list_files(path):
     global total_size
     for entry in dbx.files_list_folder(path).entries:
         if isinstance(entry, dropbox.files.FileMetadata):
             size_mb = entry.size / 1024 / 1024  # Convert size to megabytes
             print(f"{entry.path_display} ({size_mb:.2f} MB)")
             total_size += size_mb
-
-            if mirror:
-                # Create the mirror directory
-                local_path = os.path.join("dropbox_mirror", entry.path_display[1:])
-                os.makedirs(os.path.dirname(local_path), exist_ok=True)
-
-                # Download the file
-                dbx.files_download_to_file(local_path, entry.path_display)
         elif isinstance(entry, dropbox.files.FolderMetadata):
-            print(entry.path_display + "/")
-            list_files(entry.path_display, mirror)
+            list_files(entry.path_display)
+
+
+# Recursive function to mirror files
+def mirror_files(path, pbar):
+    for entry in dbx.files_list_folder(path).entries:
+        if isinstance(entry, dropbox.files.FileMetadata):
+            # Create the mirror directory
+            local_path = os.path.join("dropbox_mirror", entry.path_display[1:])
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+
+            # Download the file
+            dbx.files_download_to_file(local_path, entry.path_display)
+
+            # Update progress bar
+            pbar.update(1)
+            pbar.set_description(entry.path_display)
+        elif isinstance(entry, dropbox.files.FolderMetadata):
+            mirror_files(entry.path_display, pbar)
 
 
 # Parse command-line arguments
@@ -49,7 +70,11 @@ parser.add_argument(
 args = parser.parse_args()
 
 # Start listing files from the root
-list_files("", args.mirror)
+if args.inspect:
+    list_files("")
+    print(f"Total size: {total_size:.2f} MB")
 
-# Print total size
-print(f"Total size: {total_size:.2f} MB")
+if args.mirror:
+    total_files = count_files("")
+    with tqdm(total=total_files, dynamic_ncols=True) as pbar:
+        mirror_files("", pbar)
