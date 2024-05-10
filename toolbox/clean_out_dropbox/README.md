@@ -24,7 +24,7 @@ The script has the following command-line arguments:
 - `-i` or `--inspect`: List the files in the Dropbox account along with their sizes.
 - `-m` or `--mirror`: Mirror the contents of the Dropbox account to a local directory.
 - `-s` or `--mirror-to-s3`: Mirror the contents of the Dropbox account to an AWS S3 bucket.
-- `-d` or `--delete`: Delete the contents of the Dropbox account.
+- `-d` or `--delete`: ⚠️ Delete the contents of the Dropbox account.
 
 ### Examples
 
