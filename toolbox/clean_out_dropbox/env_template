@@ -1,3 +1,3 @@
 DROPBOX_TOKEN=
-aws_access_key_id=
-aws_secret_access_key=
+AWS_ACCESS_KEY=
+AWS_SECRET_ACCESS_KEY=
