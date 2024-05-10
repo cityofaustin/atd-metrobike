@@ -53,12 +53,14 @@ def mirror_files(path, pbar, s3_bucket=None, s3_folder=None):
     for entry in dbx.files_list_folder(path).entries:
         if isinstance(entry, dropbox.files.FileMetadata):
             if s3_bucket and s3_folder:
-                # Upload the file to S3
-                s3.upload_fileobj(
-                    dbx.files_download(entry.path_display)[1].raw,
-                    s3_bucket,
-                    f"{s3_folder}/{entry.path_display}",
-                )
+                # Skip the top-level directory
+                if entry.path_display != "/":
+                    # Upload the file to S3
+                    s3.upload_fileobj(
+                        dbx.files_download(entry.path_display)[1].raw,
+                        s3_bucket,
+                        f"{s3_folder}/{entry.path_display[1:]}",  # Skip the leading '/'
+                    )
             else:
                 # Create the mirror directory
                 local_path = os.path.join("dropbox_mirror", entry.path_display[1:])
