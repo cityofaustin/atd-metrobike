@@ -1,0 +1,9 @@
+services:
+  clean_up_dropbox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    env_file:
+      - env
