@@ -49,14 +49,13 @@ def list_files(path):
             list_files(entry.path_display)
 
 
-# Recursive function to mirror files
 def mirror_files(path, pbar, s3_bucket=None, s3_folder=None):
     for entry in dbx.files_list_folder(path).entries:
         if isinstance(entry, dropbox.files.FileMetadata):
             if s3_bucket and s3_folder:
                 # Upload the file to S3
                 s3.upload_fileobj(
-                    dbx.files_download(entry.path_display).file,
+                    dbx.files_download(entry.path_display)[1].raw,
                     s3_bucket,
                     f"{s3_folder}/{entry.path_display}",
                 )
