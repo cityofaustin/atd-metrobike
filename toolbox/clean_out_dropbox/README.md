@@ -14,6 +14,7 @@ This script is used to mirror the contents of a Dropbox account to a local direc
 The script uses the following environment variables:
 
 - `DROPBOX_TOKEN`: The access token for the Dropbox account.
+  - Note: Dropbox tokens can be either read-only or read-write. If a read-only token is provided, the `--delete` option will throw an exception.
 - `AWS_ACCESS_KEY`: The access key for the AWS account.
 - `AWS_SECRET_ACCESS_KEY`: The secret access key for the AWS account.
 
