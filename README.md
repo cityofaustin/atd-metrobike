@@ -4,6 +4,8 @@ This repository contains a script which publishes Austin Metrobike trip data to 
 
 Metrobike staff upload trip records to a Dropbox folder on a monthly basis. This script fetches those files, transforms the records, and publishes them to the Open Data Portal (Socrata).
 
+Note: [On July 2024](https://www.capmetro.org/news/details/2024/06/27/capmetro-revamps-metrobike-to--capmetro-bikeshare---new-look--new-equipment--new-experience, Metrobike changed vendors. This code was only intended for handling exports from B-Cycle.  
+
 ## Get it running
 
 1. Build the docker image
